@@ -1,0 +1,24 @@
+{
+	"folders":
+	[
+		{
+			"path": "."
+		}
+	],
+	"settings":  {
+		"font_size": 16,
+		"tab_size": 4
+	},
+	"build_systems": [
+		{
+			"name": "Test Project",
+			"working_dir": "${project_path}",
+			"cmd": [
+				"node",
+				"index.js",
+				"--dir=\"${project_path}\\test\""
+			],
+			"shell": true
+		}
+	]
+}

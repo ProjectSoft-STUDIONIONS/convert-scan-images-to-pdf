@@ -120,7 +120,7 @@
 			return new Promise(resolve => setTimeout(resolve, ms));
 		},
 		/**
-		 *
+		 * Открытие обрабатываемой директории с pdf файлом
 		 */
 		openExplorerIn = function(file) {
 			var cmd = ``;

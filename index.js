@@ -5,7 +5,7 @@
 			process.argv.slice(2).map( (element) => {
 				const matches = element.match( '(?:[-]{1,2})([a-zA-Z0-9-]+)(?:=(.*))?');
 				if ( matches ){
-					args[matches[1]] = matches[2] ? matches[2].replace(/^['"]/, '').replace(/['"]$/, '') : true;
+					args[matches[1]] = matches[2] ? matches[2].replace(/^['"]/, '').replace(/['"]$/, '') : "true";
 				}
 			});
 			return args;
@@ -15,7 +15,7 @@
 		{ spawn } = require('child_process'),
 		{ PDFDocument } =  require('pdf-lib'),
 		{ imageSizeFromFile } = require('image-size/fromFile'),
-		colors = require('colors'),
+		chalk = require('chalk'),
 		/**
 		 * Книжная
 		 */
@@ -26,11 +26,11 @@
 		wLandscape = 1600,
 		scale = .5,
 		directory = argv["dir"] ? path.resolve(argv["dir"]) : false,
-		open = argv["open"] ? argv["open"] : false,
+		open = argv["open"] ? (argv["open"].toLowerCase() === "true" || argv["open"].toLowerCase() === "1" || argv["open"].toLowerCase() === "yes" ? true : false) : false,
 		/**
 		 * Длина строки
 		 */
-		rightSpace = 20,
+		rightSpace = 25,
 		/**
 		 * Это Директория?
 		 */
@@ -64,7 +64,7 @@
 		/**
 		 * Вывод файлов из директории (1 уровень)
 		 */
-		readDirectory = function(dir_read){
+		readDirectoryImageFiles = function(dir_read){
 			return new Promise(function(resolve, reject) {
 				let files = fs.readdirSync(dir_read).filter(function(fn) {
 						let ext = path.extname(fn).toLowerCase();
@@ -80,6 +80,24 @@
 					});
 				resolve(files);
 			})
+		},
+		/**
+		 * Для удаление PDF файлов
+		 */
+		readDirectoryPdfFiles = function(dir_read) {
+			return new Promise(function(resolve, reject) {
+				let files = fs.readdirSync(dir_read).filter(function(fn) {
+					let ext = path.extname(fn).toLowerCase();
+					switch(ext) {
+							case '.pdf':
+								return true;
+								break;
+							default:
+								return false;
+						}
+				});
+				resolve(files);
+			});
 		},
 		/**
 		 * Ресайз изображения + оптимизация
@@ -123,15 +141,41 @@
 		 * Открытие обрабатываемой директории с pdf файлом
 		 */
 		openExplorerIn = function(file) {
-			var cmd = ``;
+			/**
+			 * Если не файл - выходим
+			 */
+			const stats = fs.statSync (file);
+			if(!stats.isFile()) {
+				return false;
+			}
+			/**
+			win32 		- Windows
+			linux 		- Linux
+			darwin 		- MacOS
+
+			aix 		- ?
+			freebsd 	- ?
+			openbsd 	- ?
+			sunos 		- ?
+			*/
+			let cmd = ``;
 			switch (require(`os`).platform().toLowerCase().replace(/[0-9]/g, ``).replace(`darwin`, `macos`)) {
+				/**
+				 * Открываем директорию с выделенным файлом
+				 * Файл помечаем как выделенный
+				 */
 				case `win`:
-					// Открываем директорию с выделенным файлом
 					file = file || '=';
 					cmd = `explorer`;
 					open && spawn(cmd, ['/select,', file], { detached: true }).unref();
 					break;
-				// Для остальных открываем директорию
+				/**
+				 * Открываем директорию
+				 * Как будет доступна система для разработки
+				 * примем дефолтные значения для открытия директорий
+				 * с пометкой файла как выделенный
+				 * Пока оставим так:
+				 */
 				case `linux`:
 					file = file || '/';
 					file = path.dirname(file)
@@ -144,20 +188,43 @@
 					cmd = `open`;
 					open && spawn(cmd, [file], { detached: true }).unref();
 					break;
+				/**
+				 * Эти системы пока не знаю
+				 */
+				case `aix`:
+				case `freebsd`:
+				case `openbsd`:
+				case `sunos`:
+					console.log(require(`os`).platform().toLowerCase().replace(/[0-9]/g, ``));
+					break;
 			}
-		};
+		},
+		log = console.log;
 
-	colors.enable();
-
-	if(directory) {
-		console.log(`Directory:`.padEnd(rightSpace, " ").bold.brightYellow + `${directory}`.bold.cyan);
-		let files = [...await readDirectory(`${directory}`)],
+	/**
+	 * Задан ли параметр и является ли параметр директорией
+	 */
+	if(directory && await isDir(directory)) {
+		log(chalk.yellowBright(`Directory:`.padEnd(rightSpace, " ")) + chalk.bold.cyan(`${directory}`));
+		let pdfFiles = [...await readDirectoryPdfFiles(`${directory}`)].map(fn => path.join(directory, fn));
+		if(pdfFiles.length) {
+			/**
+			 * Если есть pdf файлы, то удаляем
+			 */
+			for(let pdf of pdfFiles){
+				log(chalk.yellowBright(`Deleting the pdf file:`.padEnd(rightSpace, " ")) + chalk.bold.cyan(path.basename(pdf)));
+				fs.unlinkSync(pdf);
+			}
+		}
+		/**
+		 * Получаем изображения
+		 */
+		let files = [...await readDirectoryImageFiles(`${directory}`)],
 			tempDir = path.join(directory, 'temp');
 
 		/**
 		* Директория оптимизированных изображений
-		* Если директория не удалена и в ней есть изображения,
-		* то оптимизация этих изображений будет пропущена.
+		* Если не существует создать
 		*/
 		if(!await isDir(tempDir)){
 			fs.mkdirSync(tempDir);
@@ -175,11 +242,15 @@
 			const { width, height } = await imageSizeFromFile(oldImg);
 			// Задаём размер ресайза
 			const wRessize = width > height ? wLandscape : wPortrait;
-			console.log(`Optimization:`.padEnd(rightSpace, " ").bold.brightYellow + path.basename(tmpImg).bold.cyan, {
+			log(chalk.yellowBright(`Optimization:`.padEnd(rightSpace, " ")) + chalk.bold.cyan(path.basename(tmpImg)), {
 				width: width,
 				height: height,
 				wRessize: wRessize
 			});
+			/**
+			 * Если директория не удалена и в ней есть изображения,
+			 * то оптимизация этих изображений будет пропущена.
+			 */
 			if(!await isFile(tmpImg)) {
 				/**
 				 * Если изображение не существует
@@ -189,7 +260,7 @@
 					await resize(oldImg, tmpImg, wRessize);
 					await closeDelay(200);
 				}catch(e) {
-					console.log("Optimization error:".padEnd(rightSpace, " ").bold.brightRed + path.basename(tmpImg).underline.bold.brightRed + "\n");
+					log(chalk.redBright("Optimization error:".padEnd(rightSpace, " ")) + chalk.bold.underline.redBright(path.basename(tmpImg)) + "\n");
 					/**
 					 * Завершаем работу скрипта при ошибке.
 					 * Не удаляем временную директорию.
@@ -198,7 +269,10 @@
 				}
 			}
 		}
-		let tempFiles = [...await readDirectory(tempDir)].map(f => path.join(tempDir, f));
+		/**
+		 * Получаем оптимизированные изображения
+		 */
+		let tempFiles = [...await readDirectoryImageFiles(tempDir)].map(f => path.join(tempDir, f));
 
 		if(tempFiles.length == files.length && tempFiles.length > 0){
 			/**
@@ -206,38 +280,46 @@
 			 */
 			const pdfDoc = await PDFDocument.create();
 			for(let file of tempFiles) {
-				// Расширение файла
-				const ext = path.extname(file).toLowerCase();
-				let image = await fs.readFileSync(file);
-				let {width, height} = await imageSizeFromFile(file)
 				/**
-				 * Загружаем изображение в PDF файл
+				 * Если это файл изображения
 				 */
-				let pdfImage;
-				if(ext == '.jpg' || ext == '.jpeg'){
-					pdfImage = await pdfDoc.embedJpg(image);
-				}else if(ext == '.png'){
-					pdfImage = await pdfDoc.embedPng(image);
-				}
-				if(pdfImage){
+				if(await isFile(file)){
+					// Расширение файла
+					const ext = path.extname(file).toLowerCase();
+					let image = await fs.readFileSync(file);
+					let {width, height} = await imageSizeFromFile(file)
 					/**
-					 * Масштабируем страницу
+					 * Загружаем изображение в PDF файл
 					 */
-					pdfImage.scale(scale);
+					let pdfImage;
+					if(ext == '.jpg' || ext == '.jpeg'){
+						pdfImage = await pdfDoc.embedJpg(image);
+					}else if(ext == '.png'){
+						pdfImage = await pdfDoc.embedPng(image);
+					}
 					/**
-					 * Добавляем страницу
+					 * Если изображение загружено
 					 */
-					console.log("Add page image:".padEnd(rightSpace, " ").bold.brightYellow + path.basename(file).bold.cyan);
-					let page = pdfDoc.addPage([width * scale, height * scale]);
-					/**
-					 * Рисуем изображение на странице
-					 */
-					page.drawImage(pdfImage, {
-						x: 0,
-						y: 0,
-						width: width * scale,
-						height: height * scale,
-					});
+					if(pdfImage){
+						/**
+						 * Масштабируем страницу
+						 */
+						pdfImage.scale(scale);
+						/**
+						 * Добавляем страницу
+						 */
+						log(chalk.yellowBright("Add page image:".padEnd(rightSpace, " ")) + chalk.bold.cyan(path.basename(file)));
+						let page = pdfDoc.addPage([width * scale, height * scale]);
+						/**
+						 * Рисуем изображение на странице
+						 */
+						page.drawImage(pdfImage, {
+							x: 0,
+							y: 0,
+							width: width * scale,
+							height: height * scale,
+						});
+					}
 				}
 			}
 			/**
@@ -270,25 +352,45 @@
 			pdfDoc.setModificationDate(new Date());
 			/**
 			 * Сохраняем
-			 *
-			 * По имени директории задаём имя файла
-			 *
 			 */
 			let pdfBytes = await pdfDoc.save();
+			/**
+			 * По имени директории задаём имя файла
+			 */
 			let fileName = `${name}.pdf`;
 			let pdfFile = path.join(directory, fileName);
+			/**
+			 * Запись в файл
+			 */
 			fs.writeFileSync(pdfFile, pdfBytes);
-			console.log(`Saving a pdf file:`.padEnd(rightSpace, " ").bold.brightYellow + fileName.bold.cyan);
+			log(chalk.yellowBright(`Saving a pdf file:`.padEnd(rightSpace, " ")) + chalk.bold.cyan(fileName));
+			/**
+			 * Пытаемся открыть директорию
+			 * Присутствие параметра --open задаёт эту возможность
+			 */
 			openExplorerIn(pdfFile);
+		} else {
+			/**
+			 * Отсутствуют оптимизированные изображения
+			 */
 		}
 		/**
 		 * Удаляем временную директорию с  оптимизированными изображениями
 		 */
 		fs.rmSync(tempDir, { recursive: true, force: true });
-		console.log("\n" + "Temporary directory deleted".bold.brightYellow + "\n\n---------------------------------------------------\n");
+		log("\n" + chalk.yellowBright("Temporary directory deleted") + "\n")
+		if (chalk.supportsColor) {
+			log("   " + chalk.white("".padEnd(15, "█")));
+			log("   " + chalk.blue("".padEnd(15, "█")));
+			log("   " + chalk.red("".padEnd(15, "█")));
+			log(" ")
+		}
+		log(chalk.greenBright("---------------------------------------------------") + "\n");
+		//log(chalk.supportsColor);
 	}else{
-		console.log("The image directory is not specified");
-		console.log("--dir=\"directory/scanned/images\"".padEnd(40, " ").bold.brightGreen + "Specify the directory with the scanned images");
-		console.log("--open".padEnd(40, " ").bold.brightGreen + "Opening a directory at the end of the script\n");
+		log(chalk.bold.redBright("The image directory is not specified"));
+		let nrm = path.join("directory", "scanned", "images");
+		console.log(("--dir=\"" + nrm + "\"").padEnd(40, " ") + "Specify the directory with the scanned images");
+		console.log("--open".padEnd(40, " ") + "Opening a directory at the end of the script\n");
 	}
 })();

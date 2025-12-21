@@ -23,4 +23,5 @@ function dialog() {
 	})
 	return promise;
 }
+
 module.exports = dialog

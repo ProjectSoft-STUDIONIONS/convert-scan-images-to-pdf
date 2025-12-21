@@ -164,6 +164,7 @@
 				/**
 				 * Открываем директорию с выделенным файлом
 				 * Файл помечаем как выделенный
+				 * Пока оставим всё под Windows:
 				 */
 				case `win`:
 					file = file || '=';
@@ -173,25 +174,9 @@
 				/**
 				 * Открываем директорию
 				 * Как будет доступна система для разработки
-				 * примем дефолтные значения для открытия директорий
-				 * с пометкой файла как выделенный
-				 * Пока оставим так:
 				 */
 				case `linux`:
-					file = file || '/';
-					file = path.dirname(file)
-					cmd = `xdg-open`;
-					open && spawn(cmd, [file], { detached: true }).unref();
-					break;
 				case `macos`:
-					file = file || '/';
-					file = file.dirname(file)
-					cmd = `open`;
-					open && spawn(cmd, [file], { detached: true }).unref();
-					break;
-				/**
-				 * Эти системы пока не знаю
-				 */
 				case `aix`:
 				case `freebsd`:
 				case `openbsd`:

@@ -3,3 +3,8 @@ test/*.*
 test/**/*
 *.sublime-workspace
 !test/.*
+__history
+__recovery
+*.dproj.local
+*.identcache
+*.ini

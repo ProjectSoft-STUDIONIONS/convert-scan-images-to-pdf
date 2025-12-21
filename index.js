@@ -1,5 +1,7 @@
 (async function(){
 	require('events').EventEmitter.defaultMaxListeners = 30;
+	var directory = false,
+		open = false;
 	const argv = (() => {
 			const args = {};
 			process.argv.slice(2).map( (element) => {
@@ -16,6 +18,7 @@
 		{ PDFDocument } =  require('pdf-lib'),
 		{ imageSizeFromFile } = require('image-size/fromFile'),
 		chalk = require('chalk'),
+		dialog = require('./modules/dialog/dialog.js'),
 		/**
 		 * Книжная
 		 */
@@ -25,8 +28,6 @@
 		 */
 		wLandscape = 1600,
 		scale = .5,
-		directory = argv["dir"] ? path.resolve(argv["dir"]) : false,
-		open = argv["open"] ? (argv["open"].toLowerCase() === "true" || argv["open"].toLowerCase() === "1" || argv["open"].toLowerCase() === "yes" ? true : false) : false,
 		/**
 		 * Длина строки
 		 */
@@ -204,6 +205,14 @@
 	/**
 	 * Задан ли параметр и является ли параметр директорией
 	 */
+	//directory = argv["dir"] ? path.resolve(argv["dir"]) : false;
+	//open = argv["open"] ? (argv["open"].toLowerCase() === "true" || argv["open"].toLowerCase() === "1" || argv["open"].toLowerCase() === "yes" ? true : false) : false;
+	let out = await dialog();
+	let jsn = JSON.parse(out);
+	//if(jsn.error)
+	directory = jsn.dir;
+	open = jsn.open;
+
 	if(directory && await isDir(directory)) {
 		log(chalk.yellowBright(`Directory:`.padEnd(rightSpace, " ")) + chalk.bold.cyan(`${directory}`));
 		let pdfFiles = [...await readDirectoryPdfFiles(`${directory}`)].map(fn => path.join(directory, fn));
@@ -389,8 +398,8 @@
 		//log(chalk.supportsColor);
 	}else{
 		log(chalk.bold.redBright("The image directory is not specified"));
-		let nrm = path.join("directory", "scanned", "images");
-		console.log(("--dir=\"" + nrm + "\"").padEnd(40, " ") + "Specify the directory with the scanned images");
-		console.log("--open".padEnd(40, " ") + "Opening a directory at the end of the script\n");
+		// let nrm = path.join("directory", "scanned", "images");
+		// console.log(("--dir=\"" + nrm + "\"").padEnd(40, " ") + "Specify the directory with the scanned images");
+		// console.log("--open".padEnd(40, " ") + "Opening a directory at the end of the script\n");
 	}
 })();

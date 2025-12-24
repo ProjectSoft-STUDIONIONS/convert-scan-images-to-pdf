@@ -1,7 +1,9 @@
 (async function(){
 	require('events').EventEmitter.defaultMaxListeners = 30;
 	var directory = false,
-		open = false;
+		open = false,
+		title = '',
+		author = '';
 	const argv = (() => {
 			const args = {};
 			process.argv.slice(2).map( (element) => {
@@ -19,6 +21,10 @@
 		{ imageSizeFromFile } = require('image-size/fromFile'),
 		chalk = require('chalk'),
 		dialog = require('./modules/dialog/dialog.js'),
+		/**
+		 * Закрытие через (секунд)
+		 */
+		closeTime = 5,
 		/**
 		 * Книжная
 		 */
@@ -197,6 +203,8 @@
 	//if(jsn.error)
 	directory = jsn.dir;
 	open = jsn.open;
+	title = jsn.title;
+	author = jsn.author;
 
 	if(directory && await isDir(directory)) {
 		log(chalk.yellowBright(`Directory:`.padEnd(rightSpace, " ")) + chalk.bold.cyan(`${directory}`));
@@ -259,6 +267,7 @@
 					 * Завершаем работу скрипта при ошибке.
 					 * Не удаляем временную директорию.
 					 */
+					 closeDelay(closeTime * 1000);
 					process.exit();
 				}
 			}
@@ -325,7 +334,7 @@
 			 * Руководитель
 			 * Создатель
 			 */
-			pdfDoc.setAuthor("ProjectSoft");
+			pdfDoc.setAuthor(author);
 			pdfDoc.setProducer("ProjectSoft");
 			pdfDoc.setCreator("pdf-lib, ProjectSoft");
 			/**
@@ -336,9 +345,9 @@
 			 * По имени директории устанавливаем название, ключевые слова, описание
 			 *
 			 */
-			pdfDoc.setTitle(`${name}`);
-			pdfDoc.setKeywords([`${name}`]);
-			pdfDoc.setSubject(`${name}`);
+			pdfDoc.setTitle(`${title}`);
+			pdfDoc.setKeywords([`${title}`]);
+			pdfDoc.setSubject(`${title}`);
 			/**
 			 * Устанавливаем время создания и модификации
 			 */
@@ -373,18 +382,14 @@
 		 */
 		fs.rmSync(tempDir, { recursive: true, force: true });
 		log("\n" + chalk.yellowBright("Temporary directory deleted") + "\n")
-		if (chalk.supportsColor) {
-			log("   " + chalk.white("".padEnd(15, "█")));
-			log("   " + chalk.blue("".padEnd(15, "█")));
-			log("   " + chalk.red("".padEnd(15, "█")));
-			log(" ")
-		}
+		chalk.supportsColor && (log("   " + chalk.white("".padEnd(15, "█"))),
+								log("   " + chalk.blue("".padEnd(15, "█"))),
+								log("   " + chalk.red("".padEnd(15, "█"))),
+								log(" "));
 		log(chalk.greenBright("---------------------------------------------------") + "\n");
 		//log(chalk.supportsColor);
 	}else{
 		log(chalk.bold.redBright("The image directory is not specified"));
-		// let nrm = path.join("directory", "scanned", "images");
-		// console.log(("--dir=\"" + nrm + "\"").padEnd(40, " ") + "Specify the directory with the scanned images");
-		// console.log("--open".padEnd(40, " ") + "Opening a directory at the end of the script\n");
 	}
+	closeDelay(closeTime * 1000);
 })();

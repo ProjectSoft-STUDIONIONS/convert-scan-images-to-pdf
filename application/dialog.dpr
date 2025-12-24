@@ -12,8 +12,10 @@ uses
   Пограмма возвращает строку JSON
   dir             Полный путь до директории с изображениями
   open            Открыть директорию после окончания
+  title           Заголовок документа
+  author          Автор документа
   Формат
-  {"dir": "C:\\Temp\\ScanDir", "open": false, "error": 0}
+  {"dir": "C:\\Temp\\ScanDir", "open": false, "title": "Заголовок", "author": "Автор", "error": 0}
 
   Индекс ошибок "error"
   0 - Ошибок нет
@@ -27,6 +29,7 @@ var
 begin
   SetConsoleOutputCP(CP_UTF8);
   Handle         := GetForegroundWindow;
+  jo  := TJsonObject.Create();
   try
     Application.Handle     := Handle;
     Form1                  := TForm1.Create(nil);
@@ -34,19 +37,24 @@ begin
     EnableWindow(Handle, False);
     if IsPositiveResult(Form1.ShowModal) then
     begin
-      jo  := TJsonObject.Create();
-      jo.AddPair(TJSONPair.Create('dir', Form1.Edit1.Text));
-      jo.AddPair(TJSONPair.Create('open', Form1.CheckBox1.Checked));
-      jo.AddPair(TJSONPair.Create('error', 0));
-      jsn := jo.ToJSON();
-      jo.Free;
-      writeLn(jsn);
+      jo.AddPair(TJSONPair.Create('dir',      Form1.Edit1.Text));
+      jo.AddPair(TJSONPair.Create('open',     Form1.CheckBox1.Checked));
+      jo.AddPair(TJSONPair.Create('title',    Trim(Form1.Edit2.Text)));
+      jo.AddPair(TJSONPair.Create('author',   Trim(Form1.Edit3.Text)));
+      jo.AddPair(TJSONPair.Create('error',    0));
     end
     else
     begin
-      writeLn('{"dir": "", "open": false, "error": 1}');
+      jo.AddPair(TJSONPair.Create('dir',      ''));
+      jo.AddPair(TJSONPair.Create('open',     false));
+      jo.AddPair(TJSONPair.Create('title',    ''));
+      jo.AddPair(TJSONPair.Create('author',   ''));
+      jo.AddPair(TJSONPair.Create('error',    1));
     end;
   finally
+    jsn := jo.ToJSON();
+    writeLn(jsn);
+    jo.Free;
     Form1.Free;
     EnableWindow(Handle, True);
     SetForegroundWindow(Handle);

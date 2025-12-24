@@ -8,3 +8,4 @@ __recovery
 *.dproj.local
 *.identcache
 *.ini
+*.lnk

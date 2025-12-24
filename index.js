@@ -24,7 +24,7 @@
 		/**
 		 * Закрытие через (секунд)
 		 */
-		closeTime = 5,
+		closeTime = 3,
 		/**
 		 * Книжная
 		 */
@@ -267,7 +267,7 @@
 					 * Завершаем работу скрипта при ошибке.
 					 * Не удаляем временную директорию.
 					 */
-					 closeDelay(closeTime * 1000);
+					await closeDelay(closeTime * 1000);
 					process.exit();
 				}
 			}
@@ -391,5 +391,5 @@
 	}else{
 		log(chalk.bold.redBright("The image directory is not specified"));
 	}
-	closeDelay(closeTime * 1000);
+	await closeDelay(closeTime * 1000);
 })();

@@ -267,7 +267,7 @@
 					 * Завершаем работу скрипта при ошибке.
 					 * Не удаляем временную директорию.
 					 */
-					await closeDelay(closeTime * 1000);
+					await closeDelay(1000);
 					process.exit();
 				}
 			}

@@ -1,6 +1,6 @@
 {
 	"name": "compress_docs",
-	"version": "1.1.0",
+	"version": "1.2.0",
 	"description": "Оптимизация изображений, преобразование в pdf",
 	"product": "programm",
 	"license": "GPL-3.0",

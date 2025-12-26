@@ -14,7 +14,7 @@ const fs = require('fs'),
 			</requestedPrivileges>
 		</security>
 	</trustInfo>
-</assembly>`,
+</assembly>`.replace(/>\s+</g, `><`),
 		assemblyinfo_cs = `using System.Reflection;
 
 [assembly: AssemblyProduct("${config.product}")]

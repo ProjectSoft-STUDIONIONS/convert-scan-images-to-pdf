@@ -15,7 +15,6 @@ type
   TForm1 = class(TForm)
     BitBtn1                 : TBitBtn;
     BitBtn2                 : TBitBtn;
-    Button1                 : TSpeedButton;
     CheckBox1               : TCheckBox;
     Edit1                   : TEdit;
     Edit2                   : TEdit;
@@ -24,6 +23,7 @@ type
     Label2                  : TLabel;
     Label3                  : TLabel;
     Bevel1: TBevel;
+    BitBtn3: TBitBtn;
     procedure Form1Create(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure CheckBox1Click(Sender: TObject);
@@ -52,7 +52,6 @@ var
   ini         : TIniFile;
   appPath     : string;
   iniFile     : string;
-  folder      : TBitmap;
   titleSelect : string;
 
 function decodeText(s: string):string;
@@ -149,9 +148,11 @@ begin
   ini.WriteString('lang', 'label1.caption',     encodeText(Label1.Caption));
   ini.WriteString('lang', 'label2.caption',     encodeText(Label2.Caption));
   ini.WriteString('lang', 'label3.caption',     encodeText(Label3.Caption));
-  ini.WriteString('lang', 'button1.hint',       encodeText(Button1.Hint));
+  ini.WriteString('lang', 'button1.hint',       encodeText(BitBtn3.Hint));
   ini.WriteString('lang', 'edit2.hint',         encodeText(Edit2.Hint));
   ini.WriteString('lang', 'edit3.hint',         encodeText(Edit3.Hint));
+  ini.WriteString('lang', 'edit2.texthint',     encodeText(Edit2.TextHint));
+  ini.WriteString('lang', 'edit3.texthint',     encodeText(Edit3.TextHint));
   ini.WriteString('lang', 'bitbtn1.caption',    encodeText(BitBtn1.Caption));
   ini.WriteString('lang', 'bitbtn2.caption',    encodeText(BitBtn2.Caption));
   ini.Free;
@@ -162,22 +163,24 @@ begin
   appPath      := ExtractFilePath(Application.ExeName);
   iniFile      := TPath.Combine(appPath, 'dialog.ini');
   ini          := TIniFile.Create(iniFile);
-  author       := Trim(ini.ReadString('settings', 'author', 'ProjectSoft'));
+  author       := Trim(ini.ReadString('settings', 'author', ''));
   title        := Trim(ini.ReadString('settings', 'title', ''));
   directory    := ini.ReadString('settings', 'directory', '');
   open         := ini.ReadBool('settings', 'open', false);
 
-  Form1.Caption  := decodeText(Trim(ini.ReadString('lang', 'title',              'Выбор директории')));
+  Form1.Caption  := decodeText(Trim(ini.ReadString('lang', 'title',               'Выбор директории')));
 
-  Label1.Caption := decodeText(Trim(ini.ReadString('lang', 'label1.caption',     'Директория')));
-  Label2.Caption := decodeText(Trim(ini.ReadString('lang', 'label2.caption',     'Метатег Title')));
-  Label3.Caption := decodeText(Trim(ini.ReadString('lang', 'label3.caption',     'Автор')));
-  Button1.Hint   := decodeText(Trim(ini.ReadString('lang', 'button1.hint',       'Выбор директории#13#10с отсканированными изображениями#13#10для преобразования в PDF файл')));
-  Edit2.Hint     := decodeText(Trim(ini.ReadString('lang', 'edit2.hint',         'Введите заголовок#13#10Отображается при открытии PDF файла')));
-  Edit3.Hint     := decodeText(Trim(ini.ReadString('lang', 'edit3.hint',         'Автор документа')));
-  titleSelect    := decodeText(Trim(ini.ReadString('lang', 'select.title',       'Выберите директорию с отсканированными изображениями для преобразования в PDF файл')));
-  BitBtn1.Caption := decodeText(Trim(ini.ReadString('lang', 'bitbtn1.caption',     'OK')));
-  BitBtn2.Caption := decodeText(Trim(ini.ReadString('lang', 'bitbtn2.caption',     'Отмена')));
+  Label1.Caption  := decodeText(Trim(ini.ReadString('lang', 'label1.caption',     'Директория')));
+  Label2.Caption  := decodeText(Trim(ini.ReadString('lang', 'label2.caption',     'Метатег Title')));
+  Label3.Caption  := decodeText(Trim(ini.ReadString('lang', 'label3.caption',     'Автор')));
+  BitBtn3.Hint    := decodeText(Trim(ini.ReadString('lang', 'button1.hint',       'Выбор директории#13#10с отсканированными изображениями#13#10для преобразования в PDF файл')));
+  Edit2.Hint      := decodeText(Trim(ini.ReadString('lang', 'edit2.hint',         'Введите заголовок#13#10Отображается при открытии PDF файла')));
+  Edit3.Hint      := decodeText(Trim(ini.ReadString('lang', 'edit3.hint',         'Автор документа')));
+  Edit2.TextHint  := decodeText(Trim(ini.ReadString('lang', 'edit2.texthint',     'Введите Заголовок Документа')));
+  Edit3.TextHint  := decodeText(Trim(ini.ReadString('lang', 'edit3.texthint',     'Введите Автора Документа')));
+  titleSelect     := decodeText(Trim(ini.ReadString('lang', 'select.title',       'Выберите директорию с отсканированными изображениями для преобразования в PDF файл')));
+  BitBtn1.Caption := decodeText(Trim(ini.ReadString('lang', 'bitbtn1.caption',    'OK')));
+  BitBtn2.Caption := decodeText(Trim(ini.ReadString('lang', 'bitbtn2.caption',    'Отмена')));
 
   ini.Free;
 
@@ -189,13 +192,6 @@ begin
   CheckBox1.Checked := open;
   Edit2.Text   := title;
   Edit3.Text   := author;
-  folder       := TBitmap.Create;
-  try
-    folder.LoadFromResourceName(HInstance, 'CURRENTFOLDER');
-    Button1.Glyph.Assign(folder);
-  finally
-    folder.Free;
-  end;
 end;
 
 procedure TForm1.BitBtn1Click(Sender: TObject);
